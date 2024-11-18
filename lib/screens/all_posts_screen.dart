@@ -16,11 +16,21 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
     final currentUser = FirebaseAuth.instance.currentUser;
     _postsStream = FirebaseFirestore.instance
         .collection('posts')
+        .where('userId', isNotEqualTo: currentUser?.uid)
+        .orderBy('userId')
         .orderBy('timestamp', descending: true)
         .snapshots();
   }
 
   Future<void> _makeOffer(BuildContext context, String postId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please login to make an offer')),
+      );
+      return;
+    }
+
     final TextEditingController amountController = TextEditingController();
     final TextEditingController messageController = TextEditingController();
 
@@ -28,19 +38,30 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Make an Offer'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: 'Amount (\$)'),
-            ),
-            TextField(
-              controller: messageController,
-              decoration: InputDecoration(labelText: 'Message'),
-            ),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Amount (\$)',
+                  hintText: 'Enter amount',
+                  prefixText: '\$',
+                ),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: messageController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Message',
+                  hintText: 'Enter your message to the seller',
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -49,31 +70,50 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
           ),
           TextButton(
             onPressed: () async {
-              final user = FirebaseAuth.instance.currentUser;
-              if (user != null) {
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('posts')
-                      .doc(postId)
-                      .update({
-                    'offers': FieldValue.arrayUnion([
-                      {
-                        'userId': user.uid,
-                        'amount': double.parse(amountController.text),
-                        'message': messageController.text,
-                        'timestamp': FieldValue.serverTimestamp(),
-                      }
-                    ])
-                  });
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Offer sent successfully!')),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error sending offer: $e')),
-                  );
+              if (amountController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Please enter an amount')),
+                );
+                return;
+              }
+
+              try {
+                double amount = double.parse(amountController.text);
+                DocumentReference postRef =
+                    FirebaseFirestore.instance.collection('posts').doc(postId);
+
+                DocumentSnapshot postDoc = await postRef.get();
+                if (!postDoc.exists) {
+                  throw 'Post not found';
                 }
+
+                Map<String, dynamic> postData =
+                    postDoc.data() as Map<String, dynamic>;
+
+                if (postData['userId'] == user.uid) {
+                  throw 'Cannot make offer on your own post';
+                }
+
+                await postRef.update({
+                  'offers': FieldValue.arrayUnion([
+                    {
+                      'userId': user.uid,
+                      'amount': amount,
+                      'message': messageController.text.trim(),
+                      'timestamp': Timestamp.now(),
+                      'status': 'pending',
+                    }
+                  ])
+                });
+
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Offer sent successfully!')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error sending offer: $e')),
+                );
               }
             },
             child: Text('Send Offer'),
@@ -145,17 +185,18 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: ElevatedButton.icon(
-                      onPressed: () => _makeOffer(context, post.id),
-                      icon: Icon(Icons.local_offer),
-                      label: Text('Make Offer'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 45),
+                  if (data['userId'] != FirebaseAuth.instance.currentUser?.uid)
+                    Padding(
+                      padding: EdgeInsets.all(8),
+                      child: ElevatedButton.icon(
+                        onPressed: () => _makeOffer(context, post.id),
+                        icon: Icon(Icons.local_offer),
+                        label: Text('Make Offer'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size(double.infinity, 45),
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             );
