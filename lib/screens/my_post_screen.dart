@@ -1,3 +1,11 @@
+// Title: My Post Screen
+// Description: Screen that displays all posts created by the current user
+// Features:
+// - Shows list of user's posts with details and images
+// - Allows deleting posts
+// - Displays and manages offers on posts
+// - Handles accepting/rejecting offers
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -44,36 +52,14 @@ class _MyPostScreenState extends State<MyPostScreen> {
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(
-        title: Row(
-          children: [
-            Text(
-              '\$${offer['amount']}',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
-            ),
-            SizedBox(width: 8),
-            Text(
-              '(${DateTime.fromMillisecondsSinceEpoch((offer['timestamp'] as Timestamp).millisecondsSinceEpoch).toString().split('.')[0]})',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-          ],
+        title: Text(
+          '\$${offer['amount']}',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.green,
+          ),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(offer['message'] ?? 'No message'),
-            SizedBox(height: 4),
-            Text(
-              'From: User ${offer['userId']}',
-              style: TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
+        subtitle: Text(offer['message'] ?? 'No message'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -81,13 +67,11 @@ class _MyPostScreenState extends State<MyPostScreen> {
               icon: Icon(Icons.check_circle_outline),
               color: Colors.green,
               onPressed: () => _handleOffer(context, postId, offer, true),
-              tooltip: 'Accept Offer',
             ),
             IconButton(
               icon: Icon(Icons.cancel_outlined),
               color: Colors.red,
               onPressed: () => _handleOffer(context, postId, offer, false),
-              tooltip: 'Reject Offer',
             ),
           ],
         ),
@@ -102,27 +86,42 @@ class _MyPostScreenState extends State<MyPostScreen> {
     try {
       DocumentReference postRef =
           FirebaseFirestore.instance.collection('posts').doc(postId);
+      DocumentSnapshot postDoc = await postRef.get();
 
-      await postRef.update({
-        'offers': FieldValue.arrayRemove([offer]),
-      });
+      if (!postDoc.exists) {
+        throw 'Post not found';
+      }
 
-      offer['status'] = accept ? 'accepted' : 'rejected';
-      offer['handledAt'] = Timestamp.now();
+      List offers = (postDoc.data() as Map<String, dynamic>)['offers'] ?? [];
+      offers.removeWhere((o) =>
+          o['userId'] == offer['userId'] && o['amount'] == offer['amount']);
 
-      await postRef.update({
-        'offers': FieldValue.arrayUnion([offer]),
-        if (accept) 'status': 'sold',
-      });
+      if (accept) {
+        await postRef.update({
+          'offers': offers,
+          'status': 'accepted',
+          'acceptedOffer': {
+            'userId': offer['userId'],
+            'amount': offer['amount'],
+            'message': offer['message'],
+            'acceptedAt': FieldValue.serverTimestamp(),
+          },
+        });
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text(accept ? 'Offer accepted successfully' : 'Offer rejected'),
-          backgroundColor: accept ? Colors.green : Colors.red,
-        ),
-      );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Offer accepted successfully')),
+        );
+      } else {
+        await postRef.update({
+          'offers': offers,
+        });
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Offer rejected')),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -227,21 +226,14 @@ class _MyPostScreenState extends State<MyPostScreen> {
                   ),
                   if (offers.isNotEmpty)
                     ExpansionTile(
-                      title: Row(
-                        children: [
-                          Icon(Icons.local_offer, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Offers (${offers.length})',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                      title: Text(
+                        'Offers (${offers.length})',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       children: offers
                           .map<Widget>(
                               (offer) => _buildOfferCard(offer, post.id))
                           .toList(),
-                      initiallyExpanded: true,
                     ),
                 ],
               ),
