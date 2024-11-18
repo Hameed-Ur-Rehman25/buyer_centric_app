@@ -23,6 +23,14 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
   Future<void> _makeOffer(BuildContext context, String postId) async {
     final TextEditingController amountController = TextEditingController();
     final TextEditingController messageController = TextEditingController();
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please login to make an offer')),
+      );
+      return;
+    }
 
     return showDialog(
       context: context,
@@ -49,31 +57,32 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
           ),
           TextButton(
             onPressed: () async {
-              final user = FirebaseAuth.instance.currentUser;
-              if (user != null) {
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('posts')
-                      .doc(postId)
-                      .update({
-                    'offers': FieldValue.arrayUnion([
-                      {
-                        'userId': user.uid,
-                        'amount': double.parse(amountController.text),
-                        'message': messageController.text,
-                        'timestamp': FieldValue.serverTimestamp(),
-                      }
-                    ])
-                  });
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Offer sent successfully!')),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error sending offer: $e')),
-                  );
-                }
+              try {
+                // Create the offer data with the current timestamp
+                Map<String, dynamic> offerData = {
+                  'userId': user.uid,
+                  'amount': double.parse(amountController.text),
+                  'message': messageController.text,
+                  'timestamp':
+                      DateTime.now().toIso8601String(), // Store as string
+                  'status': 'pending'
+                };
+
+                await FirebaseFirestore.instance
+                    .collection('posts')
+                    .doc(postId)
+                    .update({
+                  'offers': FieldValue.arrayUnion([offerData])
+                });
+
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Offer sent successfully!')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error sending offer: $e')),
+                );
               }
             },
             child: Text('Send Offer'),

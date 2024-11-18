@@ -1,11 +1,4 @@
-// Title: My Post Screen
-// Description: Screen that displays all posts created by the current user
-// Features:
-// - Shows list of user's posts with details and images
-// - Allows deleting posts
-// - Displays and manages offers on posts
-// - Handles accepting/rejecting offers
-
+import 'package:buyer_centric_app/screens/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -86,40 +79,58 @@ class _MyPostScreenState extends State<MyPostScreen> {
     try {
       DocumentReference postRef =
           FirebaseFirestore.instance.collection('posts').doc(postId);
-      DocumentSnapshot postDoc = await postRef.get();
-
-      if (!postDoc.exists) {
-        throw 'Post not found';
-      }
-
-      List offers = (postDoc.data() as Map<String, dynamic>)['offers'] ?? [];
-      offers.removeWhere((o) =>
-          o['userId'] == offer['userId'] && o['amount'] == offer['amount']);
 
       if (accept) {
-        await postRef.update({
-          'offers': offers,
+        // For accepted offers
+        Map<String, dynamic> updatedOffer = {
+          ...offer,
           'status': 'accepted',
+          'handledAt': DateTime.now().toIso8601String(),
+        };
+
+        await postRef.update({
+          'offers': FieldValue.arrayRemove([offer]),
+          'status': 'sold',
           'acceptedOffer': {
             'userId': offer['userId'],
             'amount': offer['amount'],
             'message': offer['message'],
-            'acceptedAt': FieldValue.serverTimestamp(),
+            'acceptedAt': DateTime.now().toIso8601String(),
           },
         });
 
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Offer accepted successfully')),
-        );
-      } else {
         await postRef.update({
-          'offers': offers,
+          'offers': FieldValue.arrayUnion([updatedOffer]),
         });
 
-        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Offer rejected')),
+          SnackBar(
+            content: Text('Offer accepted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to chat screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              acceptedOffer: updatedOffer,
+              postId: postId,
+            ),
+          ),
+        );
+      } else {
+        // For rejected offers, simply remove them
+        await postRef.update({
+          'offers': FieldValue.arrayRemove([offer]),
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Offer rejected and removed'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } catch (e) {
@@ -166,6 +177,8 @@ class _MyPostScreenState extends State<MyPostScreen> {
             var post = snapshot.data!.docs[index];
             var data = post.data() as Map<String, dynamic>;
             var offers = (data['offers'] ?? []) as List;
+            offers.sort(
+                (a, b) => (b['amount'] as num).compareTo(a['amount'] as num));
 
             return Card(
               margin: EdgeInsets.all(8),
