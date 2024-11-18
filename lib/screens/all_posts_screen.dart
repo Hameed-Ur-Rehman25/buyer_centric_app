@@ -13,11 +13,36 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
   @override
   void initState() {
     super.initState();
-    final currentUser = FirebaseAuth.instance.currentUser;
     _postsStream = FirebaseFirestore.instance
         .collection('posts')
         .orderBy('timestamp', descending: true)
         .snapshots();
+  }
+
+  Future<String> _getUserName(String userId) async {
+    // Get current user
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    // If this post is from the current user
+    if (currentUser != null && userId == currentUser.uid) {
+      return 'Posted by you';
+    }
+
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        return 'Posted by: ${userData['name'] ?? 'Unknown User'}';
+      }
+      return 'Posted by: Unknown User';
+    } catch (e) {
+      print('Error fetching user name: $e');
+      return 'Posted by: Unknown User';
+    }
   }
 
   Future<void> _makeOffer(BuildContext context, String postId) async {
@@ -110,6 +135,7 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
           itemBuilder: (context, index) {
             var post = snapshot.data!.docs[index];
             var data = post.data() as Map<String, dynamic>;
+            String userId = data['userId'] ?? '';
 
             return Card(
               margin: EdgeInsets.all(8),
@@ -124,7 +150,25 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
                         fontSize: 18,
                       ),
                     ),
-                    subtitle: Text(data['description'] ?? ''),
+                    subtitle: FutureBuilder<String>(
+                      future: _getUserName(userId),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Text('Loading user...');
+                        }
+                        return Text(
+                          snapshot.data ?? 'Unknown User',
+                          style: TextStyle(
+                            color: snapshot.data?.contains('Posted by you') ??
+                                    false
+                                ? Colors.blue
+                                : Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                   if (data['imageUrl'] != null)
                     Container(
@@ -140,6 +184,15 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (data['description'] != null &&
+                            data['description'].isNotEmpty)
+                          Padding(
+                            padding: EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              data['description'],
+                              style: TextStyle(fontSize: 14),
+                            ),
+                          ),
                         Text(
                           'Price Range:',
                           style: TextStyle(fontWeight: FontWeight.bold),
