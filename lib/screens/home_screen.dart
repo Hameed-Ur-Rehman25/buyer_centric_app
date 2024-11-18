@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:buyer_centric_app/screens/auth/login_screen.dart';
-import 'package:buyer_centric_app/screens/car_search_details_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   Future<void> _signOut(BuildContext context) async {

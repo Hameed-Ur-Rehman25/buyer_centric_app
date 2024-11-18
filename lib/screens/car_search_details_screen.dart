@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:buyer_centric_app/screens/post_creation_screen.dart';
 import 'package:buyer_centric_app/screens/all_cars_screen.dart';
-import 'package:buyer_centric_app/widgets/custom_input_field.dart';
 
 class CarSearchDetailsScreen extends StatefulWidget {
   @override
@@ -97,6 +96,86 @@ class _CarSearchDetailsScreenState extends State<CarSearchDetailsScreen> {
     }
   }
 
+  Widget _buildAutocompleteField({
+    required String label,
+    required String hint,
+    required List<String> options,
+    required TextEditingController controller,
+    Function(String)? onSelected,
+    String? Function(String?)? validator,
+  }) {
+    return Autocomplete<String>(
+      optionsBuilder: (TextEditingValue textEditingValue) {
+        if (textEditingValue.text.isEmpty) {
+          return options; // Show all options when empty
+        }
+        return options.where(
+          (String option) {
+            return option.toLowerCase().contains(
+                  textEditingValue.text.toLowerCase(),
+                );
+          },
+        );
+      },
+      onSelected: (String selection) {
+        controller.text = selection;
+        if (onSelected != null) {
+          onSelected(selection);
+        }
+      },
+      fieldViewBuilder: (
+        BuildContext context,
+        TextEditingController fieldTextEditingController,
+        FocusNode fieldFocusNode,
+        VoidCallback onFieldSubmitted,
+      ) {
+        return TextFormField(
+          controller: fieldTextEditingController,
+          focusNode: fieldFocusNode,
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: hint,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            suffixIcon: Icon(Icons.arrow_drop_down),
+          ),
+          validator: validator,
+        );
+      },
+      optionsViewBuilder: (
+        BuildContext context,
+        AutocompleteOnSelected<String> onSelected,
+        Iterable<String> options,
+      ) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4.0,
+            child: Container(
+              width: 300,
+              constraints: BoxConstraints(maxHeight: 200),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: options.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final String option = options.elementAt(index);
+                  return ListTile(
+                    title: Text(option),
+                    onTap: () {
+                      onSelected(option);
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -120,103 +199,40 @@ class _CarSearchDetailsScreenState extends State<CarSearchDetailsScreen> {
           key: _formKey,
           child: Column(
             children: [
-              Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return const Iterable<String>.empty();
-                  }
-                  return _carMakes.where((String option) {
-                    return option
-                        .toLowerCase()
-                        .contains(textEditingValue.text.toLowerCase());
-                  });
-                },
+              _buildAutocompleteField(
+                label: 'Make',
+                hint: 'Enter car make',
+                options: _carMakes,
+                controller: _makeController,
                 onSelected: (String selection) {
-                  _makeController.text = selection;
                   _fetchModels(selection);
                 },
-                fieldViewBuilder: (BuildContext context,
-                    TextEditingController fieldTextEditingController,
-                    FocusNode fieldFocusNode,
-                    VoidCallback onFieldSubmitted) {
-                  return CustomInputField(
-                    label: 'Make',
-                    hint: 'Enter car make',
-                    controller: fieldTextEditingController,
-                    onSaved: (value) {
-                      _makeController.text = value ?? '';
-                    },
-                  );
-                },
               ),
-              SizedBox(height: 10),
-              Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return const Iterable<String>.empty();
-                  }
-                  return _carModels.where((String option) {
-                    return option
-                        .toLowerCase()
-                        .contains(textEditingValue.text.toLowerCase());
-                  });
-                },
-                onSelected: (String selection) {
-                  _modelController.text = selection;
-                },
-                fieldViewBuilder: (BuildContext context,
-                    TextEditingController fieldTextEditingController,
-                    FocusNode fieldFocusNode,
-                    VoidCallback onFieldSubmitted) {
-                  return CustomInputField(
-                    label: 'Model',
-                    hint: 'Enter car model',
-                    controller: fieldTextEditingController,
-                    onSaved: (value) {
-                      _modelController.text = value ?? '';
-                    },
-                  );
-                },
+              SizedBox(height: 16),
+              _buildAutocompleteField(
+                label: 'Model',
+                hint: 'Enter car model',
+                options: _carModels,
+                controller: _modelController,
               ),
-              SizedBox(height: 10),
-              Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return const Iterable<String>.empty();
+              SizedBox(height: 16),
+              _buildAutocompleteField(
+                label: 'Year',
+                hint: 'Enter car year',
+                options: _carYears,
+                controller: _yearController,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a year';
                   }
-                  return _carYears.where((String option) {
-                    return option.contains(textEditingValue.text);
-                  });
-                },
-                onSelected: (String selection) {
-                  _yearController.text = selection;
-                },
-                fieldViewBuilder: (BuildContext context,
-                    TextEditingController fieldTextEditingController,
-                    FocusNode fieldFocusNode,
-                    VoidCallback onFieldSubmitted) {
-                  return CustomInputField(
-                    label: 'Year',
-                    hint: 'Enter car year (e.g., 2022)',
-                    keyboardType: TextInputType.number,
-                    controller: fieldTextEditingController,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a year';
-                      }
-                      int? year = int.tryParse(value);
-                      if (year == null) {
-                        return 'Please enter a valid year';
-                      }
-                      if (year < 1990 || year > DateTime.now().year + 1) {
-                        return 'Please enter a year between 1990 and ${DateTime.now().year + 1}';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) {
-                      _yearController.text = value ?? '';
-                    },
-                  );
+                  int? year = int.tryParse(value);
+                  if (year == null) {
+                    return 'Please enter a valid year';
+                  }
+                  if (year < 1990 || year > DateTime.now().year + 1) {
+                    return 'Please enter a year between 1990 and ${DateTime.now().year + 1}';
+                  }
+                  return null;
                 },
               ),
               SizedBox(height: 20),
