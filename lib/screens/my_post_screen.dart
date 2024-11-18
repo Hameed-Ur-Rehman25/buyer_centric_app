@@ -178,7 +178,7 @@ class _MyPostScreenState extends State<MyPostScreen> {
             var data = post.data() as Map<String, dynamic>;
             var offers = (data['offers'] ?? []) as List;
             offers.sort(
-                (a, b) => (b['amount'] as num).compareTo(a['amount'] as num));
+                (a, b) => (a['amount'] as num).compareTo(b['amount'] as num));
 
             return Card(
               margin: EdgeInsets.all(8),
