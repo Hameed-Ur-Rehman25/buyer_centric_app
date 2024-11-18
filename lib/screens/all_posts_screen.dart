@@ -2,7 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class AllPostsScreen extends StatelessWidget {
+class AllPostsScreen extends StatefulWidget {
+  @override
+  _AllPostsScreenState createState() => _AllPostsScreenState();
+}
+
+class _AllPostsScreenState extends State<AllPostsScreen> {
+  late Stream<QuerySnapshot> _postsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    final currentUser = FirebaseAuth.instance.currentUser;
+    _postsStream = FirebaseFirestore.instance
+        .collection('posts')
+        .orderBy('timestamp', descending: true)
+        .snapshots();
+  }
+
   Future<void> _makeOffer(BuildContext context, String postId) async {
     final TextEditingController amountController = TextEditingController();
     final TextEditingController messageController = TextEditingController();
@@ -68,61 +85,83 @@ class AllPostsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('All Posts'),
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('posts')
-            .orderBy('timestamp', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
+    return StreamBuilder<QuerySnapshot>(
+      stream: _postsStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('No posts available'));
-          }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text('No posts available'));
+        }
 
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) {
-              var post = snapshot.data!.docs[index];
-              var data = post.data() as Map<String, dynamic>;
+        return ListView.builder(
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (context, index) {
+            var post = snapshot.data!.docs[index];
+            var data = post.data() as Map<String, dynamic>;
 
-              return Card(
-                margin: EdgeInsets.all(8),
-                child: Column(
-                  children: [
-                    ListTile(
-                      title: Text(
-                          '${data['make']} ${data['model']} ${data['year']}'),
-                      subtitle: Text(data['description'] ?? ''),
-                    ),
-                    if (data['imageUrl'] != null)
-                      Image.network(data['imageUrl']),
-                    Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text(
-                        'Price Range: \$${data['minPrice'].round()} - \$${data['maxPrice'].round()}',
+            return Card(
+              margin: EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ListTile(
+                    title: Text(
+                      '${data['make']} ${data['model']} ${data['year']}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
                       ),
                     ),
-                    Padding(
-                      padding: EdgeInsets.all(8),
-                      child: ElevatedButton(
-                        onPressed: () => _makeOffer(context, post.id),
-                        child: Text('Make Offer'),
+                    subtitle: Text(data['description'] ?? ''),
+                  ),
+                  if (data['imageUrl'] != null)
+                    Container(
+                      width: double.infinity,
+                      height: 200,
+                      child: Image.network(
+                        data['imageUrl'],
+                        fit: BoxFit.cover,
                       ),
                     ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-      ),
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Price Range:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          '\$${data['minPrice'].round()} - \$${data['maxPrice'].round()}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(8),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _makeOffer(context, post.id),
+                      icon: Icon(Icons.local_offer),
+                      label: Text('Make Offer'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(double.infinity, 45),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

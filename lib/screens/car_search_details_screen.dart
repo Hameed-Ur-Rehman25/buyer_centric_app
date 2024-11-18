@@ -54,15 +54,6 @@ class _CarSearchDetailsScreenState extends State<CarSearchDetailsScreen> {
 
         var carsRef = FirebaseFirestore.instance.collection('cars');
 
-        // Create test car data
-        var testCar = {
-          'make': make.toLowerCase(),
-          'model': model.toLowerCase(),
-          'year': int.parse(year),
-          'imageUrl':
-              "https://platform.cstatic-images.com/large/in/v2/stock_photos/efc2df08-a513-4caa-ab68-6310da6e72ff/d9e3b2c0-552e-4764-ba72-ba207220d907.png"
-        };
-
         // Try to find the car
         QuerySnapshot querySnapshot = await carsRef
             .where('make', isEqualTo: make.toLowerCase())
@@ -71,20 +62,17 @@ class _CarSearchDetailsScreenState extends State<CarSearchDetailsScreen> {
             .get();
 
         if (querySnapshot.docs.isEmpty) {
-          // If car doesn't exist, add it
-          await carsRef.add(testCar);
-          print('Added new car to database'); // Debug print
-
-          // Get the newly added car
-          querySnapshot = await carsRef
-              .where('make', isEqualTo: make.toLowerCase())
-              .where('model', isEqualTo: model.toLowerCase())
-              .where('year', isEqualTo: int.parse(year))
-              .get();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Car not found in the database'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
         }
 
         var carData = querySnapshot.docs.first.data() as Map<String, dynamic>;
-        print('Car found/created: $carData');
+        print('Car found: $carData');
 
         Navigator.push(
           context,
@@ -100,7 +88,10 @@ class _CarSearchDetailsScreenState extends State<CarSearchDetailsScreen> {
       } catch (e) {
         print('Error searching for car: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error searching for car: $e')),
+          SnackBar(
+            content: Text('Error searching for car: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
