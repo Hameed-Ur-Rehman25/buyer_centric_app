@@ -1,4 +1,3 @@
-import 'package:buyer_centric_app/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:buyer_centric_app/screens/auth/signup_screen.dart';
@@ -67,6 +66,7 @@ class LoginScreen extends StatelessWidget {
 
   Future<void> _login(BuildContext context) async {
     try {
+      // ignore: unused_local_variable
       UserCredential userCredential =
           await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,

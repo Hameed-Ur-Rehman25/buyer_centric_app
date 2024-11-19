@@ -117,6 +117,74 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
     );
   }
 
+  Widget _buildOffersList(List<dynamic> offers) {
+    if (offers.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.all(8),
+        child: Text(
+          'No offers yet',
+          style: TextStyle(
+            color: Colors.grey,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      );
+    }
+
+    // Sort offers by amount
+    offers.sort((a, b) => (b['amount'] as num).compareTo(a['amount'] as num));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text(
+            'Current Offers:',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: offers.length,
+          itemBuilder: (context, index) {
+            var offer = offers[index];
+            return Card(
+              margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: ListTile(
+                title: Text(
+                  '\$${offer['amount']}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                subtitle: Text(
+                  offer['message'] ?? 'No message',
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                trailing: Text(
+                  offer['status'] ?? 'pending',
+                  style: TextStyle(
+                    color: offer['status'] == 'accepted'
+                        ? Colors.green
+                        : Colors.grey,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
@@ -158,12 +226,9 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
                           return Text('Loading user...');
                         }
                         return Text(
-                          snapshot.data ?? 'Unknown User',
+                          'Posted by: ${snapshot.data}',
                           style: TextStyle(
-                            color: snapshot.data?.contains('Posted by you') ??
-                                    false
-                                ? Colors.blue
-                                : Colors.grey[600],
+                            color: Colors.grey[600],
                             fontStyle: FontStyle.italic,
                           ),
                         );
@@ -207,6 +272,18 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
                       ],
                     ),
                   ),
+                  if (data['offers'] != null)
+                    ExpansionTile(
+                      title: Text(
+                        'Offers (${(data['offers'] as List).length})',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      children: [
+                        _buildOffersList(data['offers'] as List),
+                      ],
+                    ),
                   Padding(
                     padding: EdgeInsets.all(8),
                     child: ElevatedButton.icon(
