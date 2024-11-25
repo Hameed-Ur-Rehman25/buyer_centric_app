@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:buyer_centric_app/screens/auth/login_screen.dart';
+import 'package:buyer_centric_app/screens/favorite_posts_screen.dart';
+import 'package:buyer_centric_app/screens/chat_list_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -63,9 +65,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _navigateToFavorites() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => FavoritePostsScreen()),
+    );
+  }
+
+  void _navigateToChats() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ChatListScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final Color primaryColor = const Color.fromARGB(255, 213, 247, 41);
 
     return Scaffold(
       appBar: AppBar(
@@ -114,11 +131,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
             SizedBox(height: 32),
+            ListTile(
+              leading: Icon(Icons.favorite, color: Colors.red),
+              title: Text('My Favorites'),
+              trailing: Icon(Icons.arrow_forward_ios),
+              onTap: _navigateToFavorites,
+            ),
+            ListTile(
+              leading: Icon(Icons.chat, color: Colors.blue),
+              title: Text('My Chats'),
+              trailing: Icon(Icons.arrow_forward_ios),
+              onTap: _navigateToChats,
+            ),
             ElevatedButton.icon(
               onPressed: _signOut,
-              icon: Icon(Icons.logout),
-              label: Text('Sign Out'),
+              icon: Icon(Icons.logout, color: Colors.grey.shade800),
+              label: Text('Sign Out',
+                  style: TextStyle(color: Colors.grey.shade800)),
               style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
                 padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               ),
             ),

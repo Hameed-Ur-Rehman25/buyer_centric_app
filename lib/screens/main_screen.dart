@@ -57,12 +57,13 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       // backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       body: _screens[_selectedIndex],
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.only(bottom: 25, right: 25, left: 25),
+        padding: const EdgeInsets.only(bottom: 5, right: 10, left: 10),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(50),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
@@ -73,19 +74,21 @@ class _MainScreenState extends State<MainScreen> {
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(50),
+            borderRadius: BorderRadius.circular(30),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 181, 183, 181),
-                  borderRadius: BorderRadius.circular(50),
+                  // color: const Color.fromARGB(255, 181, 183, 181),
+                  color: Colors.white.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: BottomBarFloating(
                   items: _items,
-                  backgroundColor: const Color.fromARGB(255, 181, 183, 181),
-                  color: Colors.white,
-                  colorSelected: const Color.fromARGB(255, 213, 247, 41),
+                  // backgroundColor: const Color.fromARGB(255, 181, 183, 181),
+                  backgroundColor: Colors.white.withOpacity(0.5),
+                  color: Colors.grey.shade600,
+                  colorSelected: Colors.black,
                   indexSelected: _selectedIndex,
                   paddingVertical: 10,
                   onTap: _onItemTapped,

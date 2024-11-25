@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PostCard extends StatelessWidget {
-  final QueryDocumentSnapshot post;
+  final DocumentSnapshot post;
   final Function(String) getUserName;
   final Function(BuildContext, String) makeOffer;
   final Widget Function(List<dynamic>) buildOffersList;
+  final bool showFavoriteButton;
+  final Function(String)? onFavoriteToggle;
 
   const PostCard({
     Key? key,
@@ -13,6 +16,8 @@ class PostCard extends StatelessWidget {
     required this.getUserName,
     required this.makeOffer,
     required this.buildOffersList,
+    this.showFavoriteButton = true,
+    this.onFavoriteToggle,
   }) : super(key: key);
 
   @override
@@ -21,6 +26,10 @@ class PostCard extends StatelessWidget {
     String userId = data['userId'] ?? '';
 
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      shadowColor: Colors.grey.shade500,
       color: Colors.white,
       margin: EdgeInsets.all(8),
       child: Column(
@@ -141,11 +150,33 @@ class PostCard extends StatelessWidget {
                     backgroundColor: const Color.fromARGB(255, 213, 247, 41),
                   ),
                 ),
+                if (showFavoriteButton) _buildFavoriteButton(context, post.id),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFavoriteButton(BuildContext context, String postId) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('favorites')
+          .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+          .where('postId', isEqualTo: postId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        bool isFavorite = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+
+        return IconButton(
+          icon: Icon(
+            isFavorite ? Icons.favorite : Icons.favorite_border,
+            color: isFavorite ? Colors.red : Colors.grey,
+          ),
+          onPressed: () => onFavoriteToggle?.call(postId),
+        );
+      },
     );
   }
 }

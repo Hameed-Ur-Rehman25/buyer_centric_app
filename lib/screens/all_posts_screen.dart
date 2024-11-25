@@ -223,6 +223,35 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
     );
   }
 
+  Future<void> _toggleFavorite(String postId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final favoritesRef = FirebaseFirestore.instance.collection('favorites');
+    final existingFavorite = await favoritesRef
+        .where('userId', isEqualTo: user.uid)
+        .where('postId', isEqualTo: postId)
+        .get();
+
+    if (existingFavorite.docs.isEmpty) {
+      // Add to favorites
+      await favoritesRef.add({
+        'userId': user.uid,
+        'postId': postId,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Added to favorites')),
+      );
+    } else {
+      // Remove from favorites
+      await existingFavorite.docs.first.reference.delete();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Removed from favorites')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -373,6 +402,8 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
                 getUserName: _getUserName,
                 makeOffer: _makeOffer,
                 buildOffersList: _buildOffersList,
+                showFavoriteButton: true,
+                onFavoriteToggle: _toggleFavorite,
               );
             },
           );
