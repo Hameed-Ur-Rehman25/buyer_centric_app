@@ -74,6 +74,7 @@ class _MyPostScreenState extends State<MyPostScreen> {
 
   Widget _buildEmptyState() {
     return Container(
+      width: double.infinity,
       margin: EdgeInsets.all(16),
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -255,6 +256,8 @@ class _MyPostScreenState extends State<MyPostScreen> {
   }
 
   Widget _buildOffersSection(List offers, String postId) {
+    offers.sort((a, b) => (a['amount'] as num).compareTo(b['amount'] as num));
+
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
