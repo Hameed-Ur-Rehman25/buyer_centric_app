@@ -1,9 +1,9 @@
+import 'package:buyer_centric_app/app_theme.dart';
 import 'package:buyer_centric_app/screens/auth/login_screen.dart';
 import 'package:buyer_centric_app/screens/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:buyer_centric_app/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

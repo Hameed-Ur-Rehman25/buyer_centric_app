@@ -262,7 +262,7 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
             // Add back the post list with Expanded
             _postList(),
           ],
-        ),
+        )
       ),
     );
   }

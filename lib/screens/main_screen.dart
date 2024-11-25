@@ -6,7 +6,6 @@ import 'package:buyer_centric_app/screens/all_posts_screen.dart';
 import 'package:buyer_centric_app/screens/my_post_screen.dart';
 import 'package:buyer_centric_app/screens/car_search_details_screen.dart';
 import 'package:buyer_centric_app/screens/profile_screen.dart';
-import 'package:buyer_centric_app/screens/chat_list_screen.dart';
 
 class MainScreen extends StatefulWidget {
   @override
