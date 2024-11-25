@@ -80,6 +80,9 @@ class _MyPostScreenState extends State<MyPostScreen> {
       DocumentReference postRef =
           FirebaseFirestore.instance.collection('posts').doc(postId);
 
+      // Get the post data first
+      DocumentSnapshot postSnapshot = await postRef.get();
+
       if (accept) {
         // For accepted offers
         Map<String, dynamic> updatedOffer = {
@@ -115,16 +118,20 @@ class _MyPostScreenState extends State<MyPostScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => ChatScreen(
-              acceptedOffer: updatedOffer,
               postId: postId,
+              buyerId: updatedOffer['userId'],
+              sellerId: FirebaseAuth.instance.currentUser!.uid,
+              postData: postSnapshot.data() as Map<String, dynamic>,
             ),
           ),
         );
       } else {
         // For rejected offers, simply remove them
-        await postRef.update({
-          'offers': FieldValue.arrayRemove([offer]),
-        });
+        await postRef.update(
+          {
+            'offers': FieldValue.arrayRemove([offer]),
+          },
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

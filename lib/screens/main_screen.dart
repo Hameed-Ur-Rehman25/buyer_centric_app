@@ -1,8 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
-import 'package:buyer_centric_app/screens/home_screen.dart';
+import 'package:awesome_bottom_bar/awesome_bottom_bar.dart';
 import 'package:buyer_centric_app/screens/all_posts_screen.dart';
 import 'package:buyer_centric_app/screens/my_post_screen.dart';
 import 'package:buyer_centric_app/screens/car_search_details_screen.dart';
+import 'package:buyer_centric_app/screens/profile_screen.dart';
+import 'package:buyer_centric_app/screens/chat_list_screen.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -13,17 +17,34 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    HomeScreen(),
-    CarSearchDetailsScreen(),
     AllPostsScreen(),
+    CarSearchDetailsScreen(),
     MyPostScreen(),
+    // ChatListScreen(),
+    ProfileScreen(),
   ];
 
-  final List<String> _titles = [
-    'Home',
-    'Search Car',
-    'Available Posts',
-    'My Posts',
+  final List<TabItem> _items = [
+    TabItem(
+      icon: Icons.home,
+      title: 'Home',
+    ),
+    TabItem(
+      icon: Icons.search,
+      title: 'Search Car',
+    ),
+    TabItem(
+      icon: Icons.list,
+      title: 'My Posts',
+    ),
+    // TabItem(
+    //   icon: Icons.chat,
+    //   title: 'Chats',
+    // ),
+    TabItem(
+      icon: Icons.person,
+      title: 'Profile',
+    ),
   ];
 
   void _onItemTapped(int index) {
@@ -35,35 +56,44 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_titles[_selectedIndex]),
-        centerTitle: true,
-      ),
+      // backgroundColor: Colors.transparent,
       body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Theme.of(context).primaryColor,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.only(bottom: 25, right: 25, left: 25),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(50),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                spreadRadius: 3,
+                blurRadius: 10,
+                offset: Offset(0, 5),
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search Car',
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 181, 183, 181),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: BottomBarFloating(
+                  items: _items,
+                  backgroundColor: const Color.fromARGB(255, 181, 183, 181),
+                  color: Colors.white,
+                  colorSelected: const Color.fromARGB(255, 213, 247, 41),
+                  indexSelected: _selectedIndex,
+                  paddingVertical: 10,
+                  onTap: _onItemTapped,
+                ),
+              ),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'All Posts',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'My Posts',
-          ),
-        ],
+        ),
       ),
     );
   }

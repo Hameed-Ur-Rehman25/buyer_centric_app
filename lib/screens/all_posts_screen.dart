@@ -1,3 +1,4 @@
+import 'package:buyer_centric_app/widgets/post_card.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +10,11 @@ class AllPostsScreen extends StatefulWidget {
 
 class _AllPostsScreenState extends State<AllPostsScreen> {
   late Stream<QuerySnapshot> _postsStream;
+  TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  late ScrollController _scrollController;
+  double _searchBarOpacity = 1.0;
+  String _userName = 'Loading...';
 
   @override
   void initState() {
@@ -17,6 +23,38 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
         .collection('posts')
         .orderBy('timestamp', descending: true)
         .snapshots();
+
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+    _fetchCurrentUserName();
+  }
+
+  void _onScroll() {
+    final offset = _scrollController.offset;
+    final opacity = 1.0 - (offset / 100).clamp(0.0, 1.0);
+    setState(() {
+      _searchBarOpacity = opacity;
+    });
+  }
+
+  Future<void> _fetchCurrentUserName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists) {
+          setState(() {
+            _userName = userDoc.data()?['name'] ?? 'User';
+          });
+        }
+      } catch (e) {
+        print('Error fetching username: $e');
+      }
+    }
   }
 
   Future<String> _getUserName(String userId) async {
@@ -187,120 +225,165 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _postsStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(child: Text('No posts available'));
-        }
-
-        return ListView.builder(
-          itemCount: snapshot.data!.docs.length,
-          itemBuilder: (context, index) {
-            var post = snapshot.data!.docs[index];
-            var data = post.data() as Map<String, dynamic>;
-            String userId = data['userId'] ?? '';
-
-            return Card(
-              margin: EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ListTile(
-                    title: Text(
-                      '${data['make']} ${data['model']} ${data['year']}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    subtitle: FutureBuilder<String>(
-                      future: _getUserName(userId),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Text('Loading user...');
-                        }
-                        return Text(
-                          'Posted by: ${snapshot.data}',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontStyle: FontStyle.italic,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  if (data['imageUrl'] != null)
-                    Container(
-                      width: double.infinity,
-                      height: 200,
-                      child: Image.network(
-                        data['imageUrl'],
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (data['description'] != null &&
-                            data['description'].isNotEmpty)
-                          Padding(
-                            padding: EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              data['description'],
-                              style: TextStyle(fontSize: 14),
-                            ),
-                          ),
-                        Text(
-                          'Price Range:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          '\$${data['minPrice'].round()} - \$${data['maxPrice'].round()}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (data['offers'] != null)
-                    ExpansionTile(
-                      title: Text(
-                        'Offers (${(data['offers'] as List).length})',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      children: [
-                        _buildOffersList(data['offers'] as List),
-                      ],
-                    ),
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: ElevatedButton.icon(
-                      onPressed: () => _makeOffer(context, post.id),
-                      icon: Icon(Icons.local_offer),
-                      label: Text('Make Offer'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 45),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            _appBar(context),
+            // Add back the post list with Expanded
+            _postList(),
+          ],
+        ),
+      ),
     );
+  }
+
+  SizedBox _appBar(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.24,
+      child: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            height: MediaQuery.sizeOf(context).height * 0.20,
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 213, 247, 41),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Hi!\n',
+                              style: TextStyle(
+                                fontSize: 27,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            TextSpan(
+                              text: _userName,
+                              style: TextStyle(
+                                fontSize: 28,
+                                color: Colors.grey.shade800,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      CircleAvatar(
+                        radius: 25,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.grey,
+                          size: 30,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Adjust the search bar margins
+              ],
+            ),
+          ),
+          Positioned(
+            bottom: -10,
+            left: 0,
+            right: 0,
+            child: _searchTextField(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Container _searchTextField() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Search by make or model...',
+          hintStyle: TextStyle(color: Colors.grey[400]),
+          prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+          suffixIcon: Icon(Icons.tune, color: Colors.grey[600]),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        ),
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value.toLowerCase();
+          });
+        },
+      ),
+    );
+  }
+
+  Expanded _postList() {
+    return Expanded(
+      child: StreamBuilder<QuerySnapshot>(
+        stream: _postsStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(child: Text('No posts available'));
+          }
+
+          var filteredDocs = snapshot.data!.docs.where((doc) {
+            var data = doc.data() as Map<String, dynamic>;
+            String make = (data['make'] ?? '').toLowerCase();
+            String model = (data['model'] ?? '').toLowerCase();
+            return make.contains(_searchQuery) || model.contains(_searchQuery);
+          }).toList();
+
+          return ListView.builder(
+            itemCount: filteredDocs.length,
+            itemBuilder: (context, index) {
+              return PostCard(
+                post: filteredDocs[index],
+                getUserName: _getUserName,
+                makeOffer: _makeOffer,
+                buildOffersList: _buildOffersList,
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }
