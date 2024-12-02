@@ -98,25 +98,29 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Make an Offer'),
+        title: Text('Make an Offer',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: amountController,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: 'Amount (\$)'),
+              decoration: InputDecoration(
+                  labelText: 'Amount (\$)', border: OutlineInputBorder()),
             ),
+            SizedBox(height: 16),
             TextField(
               controller: messageController,
-              decoration: InputDecoration(labelText: 'Message'),
+              decoration: InputDecoration(
+                  labelText: 'Message', border: OutlineInputBorder()),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: Colors.red)),
           ),
           TextButton(
             onPressed: () async {
@@ -256,14 +260,13 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            _appBar(context),
-            // Add back the post list with Expanded
-            _postList(),
-          ],
-        )
-      ),
+          child: Column(
+        children: [
+          _appBar(context),
+          // Add back the post list with Expanded
+          _postList(),
+        ],
+      )),
     );
   }
 
