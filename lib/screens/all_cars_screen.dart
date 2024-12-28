@@ -21,7 +21,7 @@ class AllCarsScreen extends StatelessWidget {
         };
       }).toList();
     } catch (e) {
-      print('Error fetching cars: $e'); // Debug print
+      print('Error fetching cars: $e'); 
       return [];
     }
   }
