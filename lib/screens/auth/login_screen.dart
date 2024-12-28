@@ -1,25 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:buyer_centric_app/screens/auth/signup_screen.dart';
 import 'package:buyer_centric_app/screens/main_screen.dart';
+import 'package:buyer_centric_app/services/firebase_service.dart';
 
 class LoginScreen extends StatelessWidget {
+  // Controllers for email and password input fields
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  // Colors used in the UI
   final Color primaryColor = const Color.fromARGB(255, 213, 247, 41);
   final Color contrastColor = Colors.grey.shade800;
 
+  // Function to handle login
   Future<void> _login(BuildContext context) async {
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text,
-        password: passwordController.text,
+      await FirebaseService.loginUser(
+        emailController.text,
+        passwordController.text,
       );
+
+      // Navigate to the main screen if login is successful
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
         (route) => false,
       );
     } catch (e) {
+      // Show error message if login fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to login: ${e.toString()}'),
@@ -45,6 +52,7 @@ class LoginScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                // Logo container
                 Container(
                   margin: EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
@@ -63,6 +71,7 @@ class LoginScreen extends StatelessWidget {
                     child: Image.asset('assets/tesla.png'),
                   ),
                 ),
+                // Welcome text
                 Text(
                   'Welcome Back',
                   style: TextStyle(
@@ -72,6 +81,7 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 8),
+                // Subtitle text
                 Text(
                   'Sign in to continue',
                   style: TextStyle(
@@ -80,6 +90,7 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 40),
+                // Email input field
                 TextField(
                   controller: emailController,
                   decoration: InputDecoration(
@@ -95,6 +106,7 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 20),
+                // Password input field
                 TextField(
                   controller: passwordController,
                   obscureText: true,
@@ -111,6 +123,7 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 30),
+                // Login button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -133,6 +146,7 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 20),
+                // Sign up link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

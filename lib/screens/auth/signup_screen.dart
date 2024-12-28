@@ -1,55 +1,82 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:buyer_centric_app/services/firebase_service.dart';
 import 'package:buyer_centric_app/screens/main_screen.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
+  @override
+  _SignUpScreenState createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+
   final Color primaryColor = const Color.fromARGB(255, 213, 247, 41);
   final Color contrastColor = Colors.grey.shade800;
 
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _signUp(BuildContext context) async {
+    if (nameController.text.isEmpty ||
+        emailController.text.isEmpty ||
+        passwordController.text.isEmpty ||
+        confirmPasswordController.text.isEmpty) {
+      _showSnackBar(context, 'All fields are required', Colors.red);
+      return;
+    }
+
+    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(emailController.text)) {
+      _showSnackBar(context, 'Please enter a valid email address', Colors.red);
+      return;
+    }
+
     if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Passwords do not match'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar(context, 'Passwords do not match', Colors.red);
+      return;
+    }
+
+    if (passwordController.text.length < 6) {
+      _showSnackBar(
+          context, 'Password must be at least 6 characters long', Colors.red);
       return;
     }
 
     try {
-      UserCredential userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text,
-        password: passwordController.text,
+      await FirebaseService.signUpUser(
+        emailController.text,
+        passwordController.text,
+        {
+          'name': nameController.text,
+          'email': emailController.text,
+        },
       );
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user?.uid)
-          .set({
-        'name': nameController.text,
-        'email': emailController.text,
-      });
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => MainScreen()),
         (route) => false,
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to sign up: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar(context, 'Failed to sign up: ${e.toString()}', Colors.red);
     }
+  }
+
+  void _showSnackBar(BuildContext context, String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+      ),
+    );
   }
 
   @override
@@ -103,67 +130,16 @@ class SignUpScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 40),
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Full Name',
-                    prefixIcon: Icon(Icons.person, color: contrastColor),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: primaryColor, width: 2),
-                    ),
-                  ),
-                ),
+                _buildTextField('Full Name', Icons.person, nameController),
                 SizedBox(height: 20),
-                TextField(
-                  controller: emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email, color: contrastColor),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: primaryColor, width: 2),
-                    ),
-                  ),
-                ),
+                _buildTextField('Email', Icons.email, emailController),
                 SizedBox(height: 20),
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock, color: contrastColor),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: primaryColor, width: 2),
-                    ),
-                  ),
-                ),
+                _buildTextField('Password', Icons.lock, passwordController,
+                    obscureText: true),
                 SizedBox(height: 20),
-                TextField(
-                  controller: confirmPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    prefixIcon: Icon(Icons.lock_outline, color: contrastColor),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: primaryColor, width: 2),
-                    ),
-                  ),
-                ),
+                _buildTextField('Confirm Password', Icons.lock_outline,
+                    confirmPasswordController,
+                    obscureText: true),
                 SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
@@ -211,6 +187,26 @@ class SignUpScreen extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+      String label, IconData icon, TextEditingController controller,
+      {bool obscureText = false}) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: contrastColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: primaryColor, width: 2),
         ),
       ),
     );
