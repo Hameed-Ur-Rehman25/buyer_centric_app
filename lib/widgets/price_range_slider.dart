@@ -29,22 +29,22 @@ class PriceRangeSlider extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Price Range',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
-            ),
-          ),
-          const SizedBox(height: 8),
+          // const Text(
+          //   'Price Range',
+          //   style: TextStyle(
+          //     fontSize: 18,
+          //     fontWeight: FontWeight.bold,
+          //     color: Colors.blue,
+          //   ),
+          // ),
+          // const SizedBox(height: 8),
           RangeSlider(
             values: values,
             max: 100000,
             min: 0,
             divisions: 100,
-            activeColor: Colors.blue,
-            inactiveColor: Colors.blue.withOpacity(0.2),
+            activeColor: const Color.fromARGB(255, 213, 247, 41),
+            inactiveColor: const Color.fromARGB(225, 213, 247, 41),
             labels: RangeLabels(
               '\$${values.start.round()}',
               '\$${values.end.round()}',

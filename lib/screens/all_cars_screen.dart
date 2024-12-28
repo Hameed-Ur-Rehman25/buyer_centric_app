@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AllCarsScreen extends StatelessWidget {
+  // _fetchAllCars fetches all car documents from the Firestore collection 'cars'
+  // and returns a list of maps containing car data
   Future<List<Map<String, dynamic>>> _fetchAllCars() async {
     try {
+      // Fetch all car documents ordered by 'make'
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('cars')
           .orderBy('make')
@@ -12,6 +15,7 @@ class AllCarsScreen extends StatelessWidget {
 
       print('Fetched ${querySnapshot.docs.length} cars'); // Debug print
 
+      // Map each document to a map containing car data and document ID
       return querySnapshot.docs.map((doc) {
         var data = doc.data() as Map<String, dynamic>;
         print('Car data: $data'); // Debug print
@@ -21,7 +25,7 @@ class AllCarsScreen extends StatelessWidget {
         };
       }).toList();
     } catch (e) {
-      print('Error fetching cars: $e'); 
+      print('Error fetching cars: $e');
       return [];
     }
   }
@@ -41,6 +45,7 @@ class AllCarsScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
+              // ignore: deprecated_member_use
               Theme.of(context).primaryColor.withOpacity(0.1),
               Colors.white,
             ],

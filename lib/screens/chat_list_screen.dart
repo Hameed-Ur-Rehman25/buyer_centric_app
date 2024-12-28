@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:buyer_centric_app/screens/chat_screen.dart';
 
 class ChatListScreen extends StatelessWidget {
+  // Fetches user information based on userId
   Future<String> _getUserInfo(String userId) async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -31,6 +32,7 @@ class ChatListScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: StreamBuilder<QuerySnapshot>(
+        // Stream to listen to real-time updates of posts where the current user has an accepted offer
         stream: FirebaseFirestore.instance
             .collection('posts')
             .where('acceptedOffer.userId', isEqualTo: currentUser?.uid)
@@ -62,6 +64,7 @@ class ChatListScreen extends StatelessWidget {
               var post = snapshot.data!.docs[index];
               var data = post.data() as Map<String, dynamic>;
               var acceptedOffer = data['acceptedOffer'];
+              // Determine the chat partner's userId
               String chatPartnerId = currentUser?.uid == data['userId']
                   ? acceptedOffer['userId']
                   : data['userId'];

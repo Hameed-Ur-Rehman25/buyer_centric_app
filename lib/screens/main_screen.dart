@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -7,45 +9,51 @@ import 'package:buyer_centric_app/screens/my_post_screen.dart';
 import 'package:buyer_centric_app/screens/car_search_details_screen.dart';
 import 'package:buyer_centric_app/screens/profile_screen.dart';
 
+// MainScreen is a StatefulWidget that represents the main screen of the app
 class MainScreen extends StatefulWidget {
   @override
   _MainScreenState createState() => _MainScreenState();
 }
 
+// _MainScreenState is the state class for MainScreen
 class _MainScreenState extends State<MainScreen> {
+  // _selectedIndex keeps track of the currently selected bottom navigation tab
   int _selectedIndex = 0;
 
+  // _screens is a list of widgets representing the different screens in the app
   final List<Widget> _screens = [
     AllPostsScreen(),
     CarSearchDetailsScreen(),
     MyPostScreen(),
-    // ChatListScreen(),
+    // ChatListScreen(), // This screen is currently commented out
     ProfileScreen(),
   ];
 
+  // _items is a list of TabItem objects representing the bottom navigation tabs
   final List<TabItem> _items = [
     TabItem(
-      icon: Icons.home,
+      icon: Icons.home, // Icon for the home tab
       title: 'Home',
     ),
     TabItem(
-      icon: Icons.search,
+      icon: Icons.search, // Icon for the search car tab
       title: 'Search Car',
     ),
     TabItem(
-      icon: Icons.list,
+      icon: Icons.list, // Icon for the my posts tab
       title: 'My Posts',
     ),
     // TabItem(
-    //   icon: Icons.chat,
+    //   icon: Icons.chat, // Icon for the chats tab
     //   title: 'Chats',
     // ),
     TabItem(
-      icon: Icons.person,
+      icon: Icons.person, // Icon for the profile tab
       title: 'Profile',
     ),
   ];
 
+  // _onItemTapped is called when a bottom navigation tab is tapped
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;

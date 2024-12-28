@@ -9,11 +9,15 @@ class CarSearchDetailsScreen extends StatefulWidget {
 }
 
 class _CarSearchDetailsScreenState extends State<CarSearchDetailsScreen> {
+  // Key to identify the form and validate it
   final _formKey = GlobalKey<FormState>();
+
+  // Controllers for the input fields
   final TextEditingController _makeController = TextEditingController();
   final TextEditingController _modelController = TextEditingController();
   final TextEditingController _yearController = TextEditingController();
 
+  // List of car makes to populate the dropdown
   final List<String> _carMakes = [
     'Toyota',
     'Honda',
@@ -21,16 +25,21 @@ class _CarSearchDetailsScreenState extends State<CarSearchDetailsScreen> {
     'Chevrolet',
     'Nissan'
   ];
+
+  // List of car models, initially empty
   List<String> _carModels = [];
+
+  // List of car years from 1990 to the current year
   List<String> _carYears = List.generate(
       DateTime.now().year - 1990 + 2, (index) => (1990 + index).toString());
 
+  // Map of car makes to their respective models
   final Map<String, List<String>> _makeToModels = {
     'Toyota': ['Camry', 'Corolla', 'Prius'],
     'Honda': ['Civic', 'Accord', 'Fit'],
-    'Ford': ['Mustang', 'F-150', 'Explorer'],
-    'Chevrolet': ['Impala', 'Malibu', 'Tahoe'],
-    'Nissan': ['Altima', 'Sentra', 'Maxima'],
+    'Ford': ['Focus', 'Mustang', 'Explorer'],
+    'Chevrolet': ['Malibu', 'Impala', 'Cruze'],
+    'Nissan': ['Altima', 'Sentra', 'Maxima']
   };
 
   Future<void> _fetchModels(String make) async {

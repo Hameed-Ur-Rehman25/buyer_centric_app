@@ -9,23 +9,39 @@ class AllPostsScreen extends StatefulWidget {
 }
 
 class _AllPostsScreenState extends State<AllPostsScreen> {
+  // Stream to listen to real-time updates of posts from Firestore
   late Stream<QuerySnapshot> _postsStream;
+
+  // Controller for the search input field
   TextEditingController _searchController = TextEditingController();
+
+  // Holds the current search query
   String _searchQuery = '';
+
+  // Controller for the scrollable list of posts
   late ScrollController _scrollController;
+
+  // Opacity of the search bar, used for animations
   double _searchBarOpacity = 1.0;
+
+  // Holds the current user's name, initially set to 'Loading...'
   String _userName = 'Loading...';
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize the stream to fetch posts ordered by timestamp in descending order
     _postsStream = FirebaseFirestore.instance
         .collection('posts')
         .orderBy('timestamp', descending: true)
         .snapshots();
 
+    // Initialize the scroll controller and add a listener to handle scroll events
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+
+    // Fetch the current user's name
     _fetchCurrentUserName();
   }
 
@@ -173,7 +189,7 @@ class _AllPostsScreenState extends State<AllPostsScreen> {
       );
     }
 
-    // Sort offers by amount
+    //! Sort offers by amount
     offers.sort((a, b) => (b['amount'] as num).compareTo(a['amount'] as num));
 
     return Column(
